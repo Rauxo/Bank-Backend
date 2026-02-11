@@ -2,7 +2,7 @@ const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
 
 async function userRegisterController(req, res) {
-  const { email, password, name } = req.bdy;
+  const { email, password, name } = req.body;
   const isExists = await userModel.findOne({
     email: email,
   });
@@ -28,7 +28,7 @@ async function userRegisterController(req, res) {
     { expiresIn: "3d" },
   );
 
-  res.cookies("token", token);
+  res.cookie("token", token);
 
   res.status(201).json({
     user: {

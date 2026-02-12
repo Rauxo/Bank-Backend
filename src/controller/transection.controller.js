@@ -166,6 +166,7 @@ async function createInitialFunds(req, res) {
   const toUserAccount = await accountModel.findOne({
     _id: toAccount,
   });
+  // console.log("toUserAccount", toUserAccount);
   if (!toUserAccount) {
     return res.status(404).json({
       message: "Account not found",
@@ -174,10 +175,10 @@ async function createInitialFunds(req, res) {
   }
 
   const fromAccount = await accountModel.findOne({
-    systeemUser: true,
     user: req.user._id,
   });
 
+  // console.log("fromAccount", fromAccount);
   if (!fromAccount) {
     return res.status(404).json({
       message: "System account not found",
@@ -188,32 +189,35 @@ async function createInitialFunds(req, res) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const transection = await transectionModel.create(
-    {
-      fromAccount: fromAccount._id,
-      toAccount,
-      amount,
-      idempotencyKey,
-      status: "PENDING",
-    },
-    { session },
-  );
+  const transection = new transectionModel({
+    fromAccount: fromAccount._id,
+    toAccount,
+    amount,
+    idempotencyKey,
+    status: "PENDING",
+  });
+  console.log("transection", transection);
+
   const debitLedgerEntry = await ledgerModel.create(
-    {
-      accountId: fromAccount._id,
-      type: "DEBIT",
-      amount: amount,
-      transectionId: transection._id,
-    },
+    [
+      {
+        account: fromAccount._id,
+        type: "DEBIT",
+        amount: amount,
+        transection: transection._id,
+      },
+    ],
     { session },
   );
   const creditLedgerEntry = await ledgerModel.create(
-    {
-      accountId: toAccount,
-      type: "CREDIT",
-      amount: amount,
-      transectionId: transection._id,
-    },
+    [
+      {
+        account: toAccount,
+        type: "CREDIT",
+        amount: amount,
+        transection: transection._id,
+      },
+    ],
     { session },
   );
   transection.status = "COMPLETED";

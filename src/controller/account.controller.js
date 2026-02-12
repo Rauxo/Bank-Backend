@@ -7,6 +7,16 @@ async function createAccount(req, res) {
   res.status(201).json(account);
 }
 
+/**
+ * - Get User accounts
+ * 
+ */
+async function getUsrAccount(req,res){
+  const accounts = await accountModel.find({user: req.user._id});
+  res.status(200).json(accounts);
+}
+
 module.exports = {
-  createAccount
+  createAccount,
+  getUsrAccount
 }

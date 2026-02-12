@@ -196,7 +196,7 @@ async function createInitialFunds(req, res) {
     idempotencyKey,
     status: "PENDING",
   });
-  console.log("transection", transection);
+  // console.log("transection", transection);
 
   const debitLedgerEntry = await ledgerModel.create(
     [

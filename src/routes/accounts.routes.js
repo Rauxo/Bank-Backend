@@ -13,4 +13,11 @@ const router = express.Router();
 
 router.post("/", authMiddleware.authMiddleware ,accountController.createAccount  )
 
+/**
+ * - GET /api/accounts/
+ * - Get User accounts
+ * - Protected route, requires authentication
+ */
+router.get("/", authMiddleware.authMiddleware ,accountController.getUsrAccount  )
+
 module.exports = router;

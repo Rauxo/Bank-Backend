@@ -9,5 +9,12 @@ const router = Router();
  */
 router.post('/',authMiddleware.authMiddleware,transectionController.createTransection)
 
+/**
+ * - POST /api/transection/system/initial-funds
+ * - Crrate a new transection for initial funds
+ */
+router.post("/system/initial-funds",authMiddleware.authMiddlewareSystemUser,transectionController.createInitialFunds)
+
+
 
 module.exports = router;

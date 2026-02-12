@@ -150,6 +150,85 @@ async function createTransection(req, res) {
   });
 }
 
+/**
+ * - Create Initial Funds Transection
+ * - This API will be used to create a transection for initial funds when a new account is created. This API will be called by the system user.
+ */
+async function createInitialFunds(req, res) {
+  const { toAccount, amount, idempotencyKey } = req.body;
+
+  if (!toAccount || !amount || !idempotencyKey) {
+    return res.status(400).json({
+      message: "toAccount, amount and idempotencyKey are required",
+      status: "error",
+    });
+  }
+  const toUserAccount = await accountModel.findOne({
+    _id: toAccount,
+  });
+  if (!toUserAccount) {
+    return res.status(404).json({
+      message: "Account not found",
+      status: "error",
+    });
+  }
+
+  const fromAccount = await accountModel.findOne({
+    systeemUser: true,
+    user: req.user._id,
+  });
+
+  if (!fromAccount) {
+    return res.status(404).json({
+      message: "System account not found",
+      status: "error",
+    });
+  }
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  const transection = await transectionModel.create(
+    {
+      fromAccount: fromAccount._id,
+      toAccount,
+      amount,
+      idempotencyKey,
+      status: "PENDING",
+    },
+    { session },
+  );
+  const debitLedgerEntry = await ledgerModel.create(
+    {
+      accountId: fromAccount._id,
+      type: "DEBIT",
+      amount: amount,
+      transectionId: transection._id,
+    },
+    { session },
+  );
+  const creditLedgerEntry = await ledgerModel.create(
+    {
+      accountId: toAccount,
+      type: "CREDIT",
+      amount: amount,
+      transectionId: transection._id,
+    },
+    { session },
+  );
+  transection.status = "COMPLETED";
+  await transection.save({ session });
+  await session.commitTransaction();
+  session.endSession();
+
+  return res.status(201).json({
+    message: "Initial funds transection completed successfully",
+    status: "success",
+    transection,
+  });
+}
+
 module.exports = {
   createTransection,
-}
+  createInitialFunds,
+};
